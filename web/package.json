@@ -1,0 +1,7 @@
+{
+  "name": "openclaw-avatar-web",
+  "private": true,
+  "dependencies": {
+    "three": "^0.180.0"
+  }
+}

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Agente OpenClaw — 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0f14; overflow: hidden; font-family: sans-serif; }
+  #scene { position: absolute; inset: 0; }
+  #belly {
+    position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%);
+    width: 380px; max-height: 140px; overflow-y: auto;
+    background: rgba(13, 27, 38, 0.88); border: 1px solid #4a5568; border-radius: 10px;
+    color: #7fe0ff; padding: 12px 16px; font-size: 14px; line-height: 1.4;
+    text-align: center; backdrop-filter: blur(2px);
+  }
+  #bar {
+    position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
+    display: flex; gap: 8px; width: 380px;
+  }
+  #text {
+    flex: 1; padding: 10px 12px; border-radius: 8px; border: none;
+    background: #1c232b; color: white; font-size: 14px; outline: none;
+  }
+  #send {
+    padding: 10px 18px; border-radius: 8px; border: none;
+    background: #2563eb; color: white; font-weight: bold; cursor: pointer;
+  }
+  #send:disabled { background: #334155; cursor: default; }
+</style>
+</head>
+<body>
+  <div id="scene"></div>
+  <div id="belly">Hola, decime algo.</div>
+  <div id="bar">
+    <input id="text" type="text" placeholder="Escribí un mensaje..." autofocus />
+    <button id="send">Enviar</button>
+  </div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 *.wav
+web/node_modules/
+web/_speech.wav
+web/package-lock.json
