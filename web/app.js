@@ -27,11 +27,24 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 sceneEl.appendChild(renderer.domElement);
 
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+// El robot mide ~6 de alto y ~3.4 de ancho (con brazos). Se aleja la cámara lo
+// necesario para que entre entero, sin importar si la ventana es chica o angosta.
+const FIT_H = 6.6;
+const FIT_W = 3.6;
+
+function fitCamera() {
+  const aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = aspect;
+  const halfFov = THREE.MathUtils.degToRad(camera.fov) / 2;
+  const distByHeight = (FIT_H / 2) / Math.tan(halfFov);
+  const distByWidth = (FIT_W / 2) / (Math.tan(halfFov) * aspect);
+  camera.position.z = Math.max(distByHeight, distByWidth);
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-});
+}
+
+fitCamera();
+window.addEventListener("resize", fitCamera);
 
 // ----------------------------------------------------------------- luces ---
 scene.add(new THREE.AmbientLight(0x445566, 1.0));

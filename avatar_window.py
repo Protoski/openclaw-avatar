@@ -11,6 +11,7 @@ Uso:
     python3 avatar_window.py [puerto]
 """
 import json
+import os
 import subprocess
 import sys
 import time
@@ -54,7 +55,11 @@ def ensure_backend() -> None:
 class AvatarWindow(Gtk.Window):
     def __init__(self):
         super().__init__(title="Agente OpenClaw")
-        self.set_default_size(520, 780)
+        # Compacto por defecto; ajustable con AVATAR_W / AVATAR_H.
+        self.set_default_size(
+            int(os.environ.get("AVATAR_W", 340)),
+            int(os.environ.get("AVATAR_H", 520)),
+        )
         self.set_decorated(False)
         self.set_app_paintable(True)
         self.set_keep_above(True)
