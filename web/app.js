@@ -8,15 +8,19 @@ const stopEl = document.getElementById("stop");
 const statusEl = document.getElementById("status");
 
 // ---------------------------------------------------------------- escena ---
+// Ventana translúcida: el fondo lo pone el CSS del body (o nada, si la ventana
+// GTK corre en modo transparente y se ve el escritorio detrás).
+const TRANSPARENT = new URLSearchParams(location.search).has("t");
+if (TRANSPARENT) document.body.classList.add("transparent");
+
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b0f14);
-scene.fog = new THREE.Fog(0x0b0f14, 8, 22);
 
 const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0, 0.1, 7.2);
 camera.lookAt(0, 0.1, 0);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
@@ -46,10 +50,11 @@ const fill = new THREE.PointLight(0xff7a59, 6, 20);
 fill.position.set(3, -2, 2);
 scene.add(fill);
 
-// piso sutil, para que el cuerpo no flote en la nada
+// Piso que solo dibuja la sombra: sobre fondo transparente da apoyo visual
+// sin pintar un disco opaco encima del escritorio.
 const floor = new THREE.Mesh(
   new THREE.CircleGeometry(6, 48),
-  new THREE.MeshStandardMaterial({ color: 0x121a22, roughness: 0.9, metalness: 0.1 })
+  new THREE.ShadowMaterial({ opacity: 0.45 })
 );
 floor.rotation.x = -Math.PI / 2;
 floor.position.y = -3.3;
@@ -434,6 +439,30 @@ sceneEl.addEventListener("wheel", (e) => {
   screenScroll = Math.max(0, screenScroll + (e.deltaY > 0 ? 1 : -1));
   drawScreen();
 }, { passive: false });
+
+// ---------------------------------------------- ventana translúcida (GTK) ---
+// En modo ventana no hay barra de título: se arrastra desde el propio robot.
+const host = window.webkit?.messageHandlers?.app;
+
+if (host) {
+  sceneEl.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    host.postMessage(JSON.stringify({ type: "drag", x: e.screenX, y: e.screenY }));
+  });
+
+  document.getElementById("close").addEventListener("click", () => {
+    host.postMessage(JSON.stringify({ type: "close" }));
+  });
+
+  const pinBtn = document.getElementById("pin");
+  let pinned = true;
+  pinBtn.addEventListener("click", () => {
+    pinned = !pinned;
+    pinBtn.classList.toggle("on", pinned);
+    pinBtn.title = pinned ? "Mantener sobre otras ventanas" : "No mantener arriba";
+    host.postMessage(JSON.stringify({ type: "pin", value: pinned }));
+  });
+}
 
 // atajos
 window.addEventListener("keydown", (e) => {
