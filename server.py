@@ -7,6 +7,7 @@ Uso:
 Abrí http://127.0.0.1:<puerto> en el navegador.
 """
 import json
+import re
 import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -23,6 +24,11 @@ SESSION_KEY = "agent:main:avatar-local"
 PIPER_BIN = "/home/protoski/.openclaw/audio-env/bin/piper"
 PIPER_MODEL = "/home/protoski/.openclaw/audio-models/es_MX-ald-medium.onnx"
 SPEECH_WAV = ROOT / "web" / "_speech.wav"
+
+AUDIO_PYTHON = "/home/protoski/.openclaw/audio-env/bin/python"
+TRANSCRIBE_PY = "/home/protoski/.openclaw/audio-env/transcribe.py"
+RECORD_WAV = "/tmp/avatar_openclaw_record.wav"
+RECORD_SECONDS = 6
 
 MIME = {
     ".html": "text/html; charset=utf-8",
@@ -50,11 +56,52 @@ def ask_openclaw(text: str) -> str:
         return f"Error: {e}"
 
 
+def listen() -> str:
+    """Graba unos segundos del micrófono y devuelve la transcripción."""
+    try:
+        subprocess.run(
+            ["arecord", "-d", str(RECORD_SECONDS), "-f", "cd", "-t", "wav", "-D", "default", RECORD_WAV],
+            capture_output=True, timeout=RECORD_SECONDS + 15,
+        )
+        proc = subprocess.run(
+            [AUDIO_PYTHON, TRANSCRIBE_PY, "--plain", RECORD_WAV],
+            capture_output=True, text=True, timeout=180,
+        )
+        return proc.stdout.strip()
+    except Exception:
+        return ""
+
+
+def speech_text(text: str) -> str:
+    """Texto listo para leer en voz alta.
+
+    Las rutas y URLs de archivos se muestran en la pantalla del pecho, pero
+    leerlas en voz es insoportable ("hache te te pe dos puntos barra barra...").
+    Se quitan de la locución; si no queda nada más que decir, avisa que terminó.
+    """
+    clean = re.sub(r"\S*file://\S+", " ", text)          # file:///ruta/al.pdf
+    clean = re.sub(r"\S*://\S+", " ", clean)              # http://, https://, etc.
+    clean = re.sub(r"(?<!\w)[~/][^\s`'\"]+", " ", clean)  # /home/... o ~/...
+    clean = clean.replace("`", "").replace("*", "").replace("#", "")
+    clean = re.sub(r"[ \t]*\n[ \t]*", ". ", clean)
+    clean = re.sub(r"\s{2,}", " ", clean)
+
+    # Al sacar la ruta suelen quedar colgando conectores ("quedó en", "previa:").
+    clean = re.sub(r"[\s:,;]*\b(en|a|de|del|al|con|y|o|es|son)\b[\s:,;]*$", "", clean, flags=re.I)
+    # Colapsa SOLO runs de 2+ puntos (".. ." → ". "), sin tocar decimales como 4.5
+    clean = re.sub(r"\.(?:[\s.]*\.)+", ". ", clean)
+    clean = re.sub(r"\s{2,}", " ", clean).strip(" .:,;-\n\t")
+
+    # Si sacando rutas no queda nada que valga la pena decir, avisa y listo.
+    if len(clean) < 12:
+        return "Listo."
+    return clean if clean[-1] in ".!?…" else clean + "."
+
+
 def speak(text: str) -> None:
-    clean = text.replace("`", "").replace("*", "").replace("#", "")
     subprocess.run(
         [PIPER_BIN, "-m", PIPER_MODEL, "-f", str(SPEECH_WAV)],
-        input=clean, text=True, capture_output=True, timeout=60,
+        input=speech_text(text), text=True, capture_output=True, timeout=60,
     )
 
 
@@ -112,7 +159,13 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        if urlparse(self.path).path != "/api/ask":
+        path = urlparse(self.path).path
+
+        if path == "/api/listen":
+            self._send_json({"text": listen()})
+            return
+
+        if path != "/api/ask":
             self.send_response(404)
             self.end_headers()
             return

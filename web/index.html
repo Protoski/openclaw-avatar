@@ -2,39 +2,59 @@
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<title>Agente OpenClaw — 3D</title>
+<title>Agente OpenClaw</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #0b0f14; overflow: hidden; font-family: sans-serif; }
-  #scene { position: absolute; inset: 0; }
-  #belly {
-    position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%);
-    width: 380px; max-height: 140px; overflow-y: auto;
-    background: rgba(13, 27, 38, 0.88); border: 1px solid #4a5568; border-radius: 10px;
-    color: #7fe0ff; padding: 12px 16px; font-size: 14px; line-height: 1.4;
-    text-align: center; backdrop-filter: blur(2px);
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: #0b0f14; overflow: hidden;
+    font-family: system-ui, sans-serif; user-select: none;
   }
+  #scene { position: absolute; inset: 0; }
+
+  #status {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: #7fe0ff; background: rgba(13,27,38,.7); border: 1px solid #24405a;
+    padding: 5px 14px; border-radius: 999px; backdrop-filter: blur(4px);
+  }
+  #status[data-state="listening"] { color: #4ade80; border-color: #2b6b46; }
+  #status[data-state="thinking"]  { color: #fbbf24; border-color: #6b5524; }
+
   #bar {
-    position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
-    display: flex; gap: 8px; width: 380px;
+    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+    display: flex; gap: 8px; width: min(560px, calc(100% - 40px));
   }
   #text {
-    flex: 1; padding: 10px 12px; border-radius: 8px; border: none;
-    background: #1c232b; color: white; font-size: 14px; outline: none;
+    flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid #24405a;
+    background: rgba(18,26,34,.9); color: #e8ecf1; font-size: 14px; outline: none;
+    user-select: text;
   }
-  #send {
-    padding: 10px 18px; border-radius: 8px; border: none;
-    background: #2563eb; color: white; font-weight: bold; cursor: pointer;
+  #text:focus { border-color: #3ab6ff; }
+  button {
+    padding: 12px 16px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 600; color: white; transition: opacity .15s;
   }
-  #send:disabled { background: #334155; cursor: default; }
+  button:disabled { opacity: .35; cursor: default; }
+  #send { background: #2563eb; }
+  #mic  { background: #16a34a; }
+  #stop { background: #dc2626; }
+
+  #hint {
+    position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+    font-size: 11px; color: #45607a;
+  }
 </style>
 </head>
 <body>
   <div id="scene"></div>
-  <div id="belly">Hola, decime algo.</div>
+  <div id="status" data-state="idle">Listo</div>
   <div id="bar">
-    <input id="text" type="text" placeholder="Escribí un mensaje..." autofocus />
+    <input id="text" type="text" placeholder="Escribí un mensaje…  ( / para enfocar )" autocomplete="off" />
+    <button id="mic" title="Hablar (graba 6 s)">🎙</button>
     <button id="send">Enviar</button>
+    <button id="stop" hidden title="Cortar la voz (Esc)">■</button>
   </div>
+  <div id="hint">rueda del mouse sobre el robot = desplazar texto de la pantalla</div>
   <script type="module" src="/app.js"></script>
 </body>
 </html>
